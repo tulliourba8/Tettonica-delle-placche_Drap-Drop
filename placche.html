@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Placca Tettonica - Drag & Drop</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      background: #f2f2f2;
+    }
+    h1 {
+      margin: 20px;
+    }
+    #map-container {
+      position: relative;
+      display: inline-block;
+    }
+    #map-container img {
+      width: 2100px;
+      height: auto;
+    }
+    .label {
+      position: absolute;
+      background-color: #e0f7fa;
+      border: 1px solid #00796b;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: move;
+      user-select: none;
+      font-size: 13px;
+    }
+    .target {
+      position: absolute;
+      width: 60px;
+      height: 30px;
+      background-color: rgba(255, 204, 128, 0.6);
+      border: 2px dashed #ff9800;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+    button {
+      margin: 10px 10px 0 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Trascina i nomi delle placche tettoniche sulla posizione corrispondente nella mappa</h1>
+
+<div id="map-container">
+  <img src="mappa-placche.jpg" alt="Mappa delle placche tettoniche" />
+
+  <!-- Aree target aggiornate -->
+  <div class="target" style="top: 700px; left: 1500px;" id="target-africana"></div>
+  <div class="target" style="top: 1250px; left: 1000px;" id="target-antartica"></div>
+  <div class="target" style="top: 660px; left: 1700px;" id="target-arabica"></div> <!-- aggiornato -->
+  <div class="target" style="top: 910px; left: 620px;" id="target-pacifico"></div>
+  <div class="target" style="top: 650px; left: 1850px;" id="target-indiana"></div>
+  <div class="target" style="top: 380px; left: 900px;" id="target-nordamericana"></div>
+  <div class="target" style="top: 805px; left: 1105px;" id="target-sudamericana"></div>
+  <div class="target" style="top: 900px; left: 200px;" id="target-australiana"></div>
+  <div class="target" style="top: 350px; left: 1750px;" id="target-eurasiatica"></div>
+
+  <!-- Etichette trascinabili -->
+  <div class="label" id="africana"      style="top: 20px; left: 20px;" draggable="true">Placca Africana</div>
+  <div class="label" id="antartica"     style="top: 60px; left: 20px;" draggable="true">Placca Antartica</div>
+  <div class="label" id="arabica"       style="top: 100px; left: 20px;" draggable="true">Placca Arabica</div>
+  <div class="label" id="pacifico"      style="top: 140px; left: 20px;" draggable="true">Placca del Pacifico</div>
+  <div class="label" id="indiana"       style="top: 180px; left: 20px;" draggable="true">Placca Indiana</div>
+  <div class="label" id="nordamericana" style="top: 220px; left: 20px;" draggable="true">Placca Nordamericana</div>
+  <div class="label" id="sudamericana"  style="top: 260px; left: 20px;" draggable="true">Placca Sudamericana</div>
+  <div class="label" id="australiana"   style="top: 300px; left: 20px;" draggable="true">Placca Australiana</div>
+  <div class="label" id="eurasiatica"   style="top: 340px; left: 20px;" draggable="true">Placca Eurasiatica</div>
+</div>
+
+<button id="check-btn">Verifica</button>
+<button id="reset-btn">Reset</button>
+<div id="result"></div>
+
+<script>
+  const labels = document.querySelectorAll('.label');
+  let offsetX, offsetY;
+
+  const initialPositions = {};
+
+  labels.forEach(label => {
+    const id = label.id;
+    initialPositions[id] = {
+      top: label.style.top,
+      left: label.style.left
+    };
+
+    label.addEventListener('dragstart', (e) => {
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+    });
+
+    label.addEventListener('dragend', (e) => {
+      const container = document.getElementById('map-container');
+      const rect = container.getBoundingClientRect();
+      label.style.left = (e.clientX - rect.left - offsetX) + 'px';
+      label.style.top = (e.clientY - rect.top - offsetY) + 'px';
+    });
+  });
+
+  const targetPositions = {
+    africana:      { x: 1500, y: 700 },
+    antartica:     { x: 1000, y: 1250 },
+    arabica:       { x: 1700, y: 660 }, // aggiornato
+    pacifico:      { x: 620,  y: 910 },
+    indiana:       { x: 1850, y: 650 },
+    nordamericana: { x: 900,  y: 380 },
+    sudamericana:  { x: 1105, y: 805 },
+    australiana:   { x: 200,  y: 900 },
+    eurasiatica:   { x: 1750, y: 350 }
+  };
+
+  const tolerance = 50;
+
+  document.getElementById("check-btn").addEventListener("click", () => {
+    let correct = 0;
+
+    for (const [id, target] of Object.entries(targetPositions)) {
+      const el = document.getElementById(id);
+      const x = parseInt(el.style.left);
+      const y = parseInt(el.style.top);
+
+      const dx = x - target.x;
+      const dy = y - target.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= tolerance) {
+        el.style.borderColor = "green";
+        correct++;
+      } else {
+        el.style.borderColor = "red";
+      }
+    }
+
+    const resultText =
+      correct === Object.keys(targetPositions).length
+        ? "🎉 Tutte le placche sono state posizionate correttamente!"
+        : `✅ Hai posizionato correttamente ${correct} placche su ${Object.keys(targetPositions).length}.`;
+
+    document.getElementById("result").textContent = resultText;
+  });
+
+  document.getElementById("reset-btn").addEventListener("click", () => {
+    for (const [id, pos] of Object.entries(initialPositions)) {
+      const el = document.getElementById(id);
+      el.style.top = pos.top;
+      el.style.left = pos.left;
+      el.style.borderColor = "#00796b";
+    }
+    document.getElementById("result").textContent = "";
+  });
+</script>
+
+</body>
+</html>
