@@ -27,7 +27,7 @@
       border: 1px solid #00796b;
       padding: 4px 8px;
       border-radius: 6px;
-      cursor: move;
+      cursor: grab;
       user-select: none;
       font-size: 13px;
     }
@@ -59,10 +59,10 @@
 <div id="map-container">
   <img src="mappa-placche.jpg" alt="Mappa delle placche tettoniche" />
 
-  <!-- Aree target aggiornate -->
+  <!-- Aree target -->
   <div class="target" style="top: 700px; left: 1500px;" id="target-africana"></div>
   <div class="target" style="top: 1250px; left: 1000px;" id="target-antartica"></div>
-  <div class="target" style="top: 660px; left: 1700px;" id="target-arabica"></div> <!-- aggiornato -->
+  <div class="target" style="top: 660px; left: 1700px;" id="target-arabica"></div>
   <div class="target" style="top: 910px; left: 620px;" id="target-pacifico"></div>
   <div class="target" style="top: 650px; left: 1850px;" id="target-indiana"></div>
   <div class="target" style="top: 380px; left: 900px;" id="target-nordamericana"></div>
@@ -71,15 +71,15 @@
   <div class="target" style="top: 350px; left: 1750px;" id="target-eurasiatica"></div>
 
   <!-- Etichette trascinabili -->
-  <div class="label" id="africana"      style="top: 20px; left: 20px;" draggable="true">Placca Africana</div>
-  <div class="label" id="antartica"     style="top: 60px; left: 20px;" draggable="true">Placca Antartica</div>
-  <div class="label" id="arabica"       style="top: 100px; left: 20px;" draggable="true">Placca Arabica</div>
-  <div class="label" id="pacifico"      style="top: 140px; left: 20px;" draggable="true">Placca del Pacifico</div>
-  <div class="label" id="indiana"       style="top: 180px; left: 20px;" draggable="true">Placca Indiana</div>
-  <div class="label" id="nordamericana" style="top: 220px; left: 20px;" draggable="true">Placca Nordamericana</div>
-  <div class="label" id="sudamericana"  style="top: 260px; left: 20px;" draggable="true">Placca Sudamericana</div>
-  <div class="label" id="australiana"   style="top: 300px; left: 20px;" draggable="true">Placca Australiana</div>
-  <div class="label" id="eurasiatica"   style="top: 340px; left: 20px;" draggable="true">Placca Eurasiatica</div>
+  <div class="label" id="africana"      style="top: 20px; left: 20px;">Placca Africana</div>
+  <div class="label" id="antartica"     style="top: 60px; left: 20px;">Placca Antartica</div>
+  <div class="label" id="arabica"       style="top: 100px; left: 20px;">Placca Arabica</div>
+  <div class="label" id="pacifico"      style="top: 140px; left: 20px;">Placca del Pacifico</div>
+  <div class="label" id="indiana"       style="top: 180px; left: 20px;">Placca Indiana</div>
+  <div class="label" id="nordamericana" style="top: 220px; left: 20px;">Placca Nordamericana</div>
+  <div class="label" id="sudamericana"  style="top: 260px; left: 20px;">Placca Sudamericana</div>
+  <div class="label" id="australiana"   style="top: 300px; left: 20px;">Placca Australiana</div>
+  <div class="label" id="eurasiatica"   style="top: 340px; left: 20px;">Placca Eurasiatica</div>
 </div>
 
 <button id="check-btn">Verifica</button>
@@ -88,34 +88,66 @@
 
 <script>
   const labels = document.querySelectorAll('.label');
-  let offsetX, offsetY;
+  let activeLabel = null;
+  let startX, startY, initialLeft, initialTop;
 
   const initialPositions = {};
-
   labels.forEach(label => {
-    const id = label.id;
-    initialPositions[id] = {
+    initialPositions[label.id] = {
       top: label.style.top,
       left: label.style.left
     };
 
-    label.addEventListener('dragstart', (e) => {
-      offsetX = e.offsetX;
-      offsetY = e.offsetY;
+    label.addEventListener('mousedown', (e) => {
+      activeLabel = label;
+      startX = e.clientX;
+      startY = e.clientY;
+      initialLeft = parseInt(label.style.left);
+      initialTop = parseInt(label.style.top);
+      e.preventDefault();
     });
 
-    label.addEventListener('dragend', (e) => {
-      const container = document.getElementById('map-container');
-      const rect = container.getBoundingClientRect();
-      label.style.left = (e.clientX - rect.left - offsetX) + 'px';
-      label.style.top = (e.clientY - rect.top - offsetY) + 'px';
+    label.addEventListener('touchstart', (e) => {
+      activeLabel = label;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      initialLeft = parseInt(label.style.left);
+      initialTop = parseInt(label.style.top);
     });
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (activeLabel) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      activeLabel.style.left = (initialLeft + dx) + 'px';
+      activeLabel.style.top = (initialTop + dy) + 'px';
+    }
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (activeLabel) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      activeLabel.style.left = (initialLeft + dx) + 'px';
+      activeLabel.style.top = (initialTop + dy) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    activeLabel = null;
+  });
+
+  document.addEventListener('touchend', () => {
+    activeLabel = null;
   });
 
   const targetPositions = {
     africana:      { x: 1500, y: 700 },
     antartica:     { x: 1000, y: 1250 },
-    arabica:       { x: 1700, y: 660 }, // aggiornato
+    arabica:       { x: 1700, y: 660 },
     pacifico:      { x: 620,  y: 910 },
     indiana:       { x: 1850, y: 650 },
     nordamericana: { x: 900,  y: 380 },
